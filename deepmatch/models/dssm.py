@@ -73,7 +73,9 @@ def DSSM(user_feature_columns, item_feature_columns, user_dnn_hidden_units=(64, 
     item_dnn_out = l2_normalize(item_dnn_out)
 
     if loss_type == "logistic":
-        score = inner_product(user_dnn_out, item_dnn_out, temperature)
+        # score = inner_product(user_dnn_out, item_dnn_out, temperature)
+        score = inner_product(user_dnn_out, item_dnn_out, temperature, axis = -1)
+
         output = PredictionLayer("binary", False)(score)
 
     elif loss_type == "softmax":

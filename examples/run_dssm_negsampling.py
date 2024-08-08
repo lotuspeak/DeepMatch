@@ -1,4 +1,8 @@
 import pandas as pd
+
+import sys
+sys.path.append("/Users/nh/code/rec推荐/DeepMatch")
+
 from deepctr.feature_column import SparseFeat, VarLenSparseFeat
 from deepmatch.models import *
 from preprocess import gen_data_set, gen_model_input
@@ -7,7 +11,8 @@ from tensorflow.python.keras.models import Model
 
 if __name__ == "__main__":
 
-    data = pd.read_csvdata = pd.read_csv("./movielens_sample.txt")
+    data = pd.read_csvdata = pd.read_csv("/Users/nh/code/rec推荐/DeepMatch/examples/movielens_sample.txt")
+    # data = pd.read_csvdata = pd.read_csv("./movielens_sample.txt")
     sparse_features = ["movie_id", "user_id",
                        "gender", "age", "occupation", "zip", "genres"]
     SEQ_LEN = 50
@@ -68,7 +73,7 @@ if __name__ == "__main__":
     model.compile(optimizer='adagrad', loss="binary_crossentropy")
 
     history = model.fit(train_model_input, train_label,
-                        batch_size=256, epochs=1, verbose=1, validation_split=0.0, )
+                        batch_size=256, epochs=20, verbose=1, validation_split=0.0, )
 
     # 4. Generate user features for testing and full item features for retrieval
     test_user_model_input = test_model_input
