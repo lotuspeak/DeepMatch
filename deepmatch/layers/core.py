@@ -69,7 +69,7 @@ class SampledSoftmaxLayer(Layer):
         super(SampledSoftmaxLayer, self).build(input_shape)
 
     def call(self, inputs_with_item_idx, training=None, **kwargs):
-        item_embeddings, user_vec, item_idx = inputs_with_item_idx
+        item_embeddings, user_vec, item_idx = inputs_with_item_idx  #[voc_size, dim], [bs, dim], [bs, 1]
         if item_idx.dtype != tf.int64:
             item_idx = tf.cast(item_idx, tf.int64)
         user_vec /= self.temperature

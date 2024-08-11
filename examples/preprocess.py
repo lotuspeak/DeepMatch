@@ -4,7 +4,7 @@ from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 from tqdm import tqdm
 
 
-def gen_data_set(data, seq_max_len=50, negsample=0):
+def gen_data_set(data, seq_max_len=50, negsample=0, test_sample_num = 1):
     data.sort_values("timestamp", inplace=True)
     item_ids = data['movie_id'].unique()
     item_id_genres_map = dict(zip(data['movie_id'].values, data['genres'].values))
@@ -22,7 +22,8 @@ def gen_data_set(data, seq_max_len=50, negsample=0):
             hist = pos_list[:i]
             genres_hist = genres_list[:i]
             seq_len = min(i, seq_max_len)
-            if i != len(pos_list) - 1:
+            # if i != len(pos_list) - 1:
+            if i < len(pos_list) - test_sample_num:
                 train_set.append((
                     reviewerID, pos_list[i], 1, hist[::-1][:seq_len], seq_len, genres_hist[::-1][:seq_len],
                     genres_list[i],

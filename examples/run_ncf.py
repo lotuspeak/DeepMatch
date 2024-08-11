@@ -1,18 +1,24 @@
 import pandas as pd
+
+import sys
+sys.path.append("/Users/nh/code/rec推荐/DeepMatch")
+
 from deepmatch.models import NCF
 from preprocess import gen_data_set, gen_model_input
 from sklearn.preprocessing import LabelEncoder
 
 if __name__ == "__main__":
-    data = pd.read_csvdata = pd.read_csv("./movielens_sample.txt")
+    # data = pd.read_csv("./movielens_sample.txt")
+    # data = pd.read_csv("/Users/nh/code/rec推荐/DeepMatch/examples/movielens_sample.txt")
+    data = pd.read_csv("/Users/nh/code/rec推荐/DeepMatch/examples/movielens_1_of_10.csv")
     sparse_features = ["movie_id", "user_id",
-                       "gender", "age", "occupation", "zip", ]
+                       "gender", "age", "occupation", "zip", "genres"]
     SEQ_LEN = 50
     negsample = 3
 
     # 1.Label Encoding for sparse features,and process sequence features with `gen_date_set` and `gen_model_input`
 
-    features = ['user_id', 'movie_id', 'gender', 'age', 'occupation', 'zip']
+    features = ['user_id', 'movie_id', 'gender', 'age', 'occupation', 'zip', 'genres']
     feature_max_idx = {}
     for feature in features:
         lbe = LabelEncoder()
@@ -51,5 +57,6 @@ if __name__ == "__main__":
     history = model.fit(train_model_input, train_label,
                         batch_size=64, epochs=20, verbose=2, validation_split=0.2, )
     pred_ans = model.predict(test_model_input, batch_size=64)
+
     # print("test LogLoss", round(log_loss(test_label, pred_ans), 4))
     # print("test AUC", round(roc_auc_score(test_label, pred_ans), 4))

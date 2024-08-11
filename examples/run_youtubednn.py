@@ -1,4 +1,8 @@
 import pandas as pd
+
+import sys
+sys.path.append("/Users/nh/code/rec推荐/DeepMatch")
+
 from deepctr.feature_column import SparseFeat, VarLenSparseFeat
 from deepmatch.models import *
 from deepmatch.utils import sampledsoftmaxloss, NegativeSampler
@@ -9,14 +13,17 @@ from tensorflow.python.keras.models import Model
 
 if __name__ == "__main__":
 
-    data = pd.read_csvdata = pd.read_csv("./movielens_sample.txt")
-    data['genres'] = list(map(lambda x: x.split('|')[0], data['genres'].values))
+    # data = pd.read_csvdata = pd.read_csv("./movielens_sample.txt")
+    data = pd.read_csv("/Users/nh/code/rec推荐/DeepMatch/examples/movielens_sample.txt")
+    data = pd.read_csv("/Users/nh/code/rec推荐/DeepMatch/examples/movielens_1_of_10.csv")
+    # data['genres'] = list(map(lambda x: x.split('|')[0], data['genres'].values))
 
     sparse_features = ["movie_id", "user_id",
                        "gender", "age", "occupation", "zip", "genres"]
     SEQ_LEN = 50
 
-    # 1.Label Encoding for sparse features,and process sequence features with `gen_date_set` and `gen_model_input`
+    # 1.Label Encoding for sparse features,and process sequence features 
+    # with `gen_date_set` and `gen_model_input`
 
     feature_max_idx = {}
     for feature in sparse_features:
@@ -77,7 +84,7 @@ if __name__ == "__main__":
     model.compile(optimizer="adam", loss=sampledsoftmaxloss)
 
     history = model.fit(train_model_input, train_label,  # train_label,
-                        batch_size=256, epochs=1, verbose=1, validation_split=0.0, )
+                        batch_size=256, epochs=50, verbose=2, validation_split=0.1, )
 
     # 4. Generate user features for testing and full item features for retrieval
     test_user_model_input = test_model_input
@@ -94,45 +101,46 @@ if __name__ == "__main__":
 
     # 5. [Optional] ANN search by faiss  and evaluate the result
 
-    # import heapq
-    # from collections import defaultdict
-    # from tqdm import tqdm
-    # import numpy as np
-    # import faiss
-    # from deepmatch.utils import recall_N
-    # 
-    # k_max = 2
-    # topN = 50
-    # test_true_label = {line[0]: [line[1]] for line in test_set}
-    # 
-    # index = faiss.IndexFlatIP(embedding_dim)
-    # # faiss.normalize_L2(item_embs)
-    # index.add(item_embs)
-    # # faiss.normalize_L2(user_embs)
-    # 
-    # if len(user_embs.shape) == 2:  # multi interests model's shape = 3 (MIND,ComiRec)
-    #     user_embs = np.expand_dims(user_embs, axis=1)
-    # 
-    # score_dict = defaultdict(dict)
-    # for k in range(k_max):
-    #     user_emb = user_embs[:, k, :]
-    #     D, I = index.search(np.ascontiguousarray(user_emb), topN)
-    #     for i, uid in tqdm(enumerate(test_user_model_input['user_id']), total=len(test_user_model_input['user_id'])):
-    #         if np.abs(user_emb[i]).max() < 1e-8:
-    #             continue
-    #         for score, itemid in zip(D[i], I[i]):
-    #             score_dict[uid][itemid] = max(score, score_dict[uid].get(itemid, float("-inf")))
-    # 
-    # s = []
-    # hit = 0
-    # for i, uid in enumerate(test_user_model_input['user_id']):
-    #     pred = [item_profile['movie_id'].values[x[0]] for x in
-    #             heapq.nlargest(topN, score_dict[uid].items(), key=lambda x: x[1])]
-    #     filter_item = None
-    #     recall_score = recall_N(test_true_label[uid], pred, N=topN)
-    #     s.append(recall_score)
-    #     if test_true_label[uid] in pred:
-    #         hit += 1
-    # 
-    # print("recall", np.mean(s))
-    # print("hr", hit / len(test_user_model_input['user_id']))
+    import heapq
+    from collections import defaultdict
+    from tqdm import tqdm
+    import numpy as np
+    import faiss
+    from deepmatch.utils import recall_N
+    
+    k_max = 2
+    k_max = 1
+    topN = 50
+    test_true_label = {line[0]: [line[1]] for line in test_set}
+    
+    index = faiss.IndexFlatIP(embedding_dim)
+    # faiss.normalize_L2(item_embs)
+    index.add(item_embs)
+    # faiss.normalize_L2(user_embs)
+    
+    if len(user_embs.shape) == 2:  # multi interests model's shape = 3 (MIND,ComiRec)
+        user_embs = np.expand_dims(user_embs, axis=1)
+    
+    score_dict = defaultdict(dict)
+    for k in range(k_max):
+        user_emb = user_embs[:, k, :]
+        D, I = index.search(np.ascontiguousarray(user_emb), topN)
+        for i, uid in tqdm(enumerate(test_user_model_input['user_id']), total=len(test_user_model_input['user_id'])):
+            if np.abs(user_emb[i]).max() < 1e-8:
+                continue
+            for score, itemid in zip(D[i], I[i]):
+                score_dict[uid][itemid] = max(score, score_dict[uid].get(itemid, float("-inf")))
+    
+    s = []
+    hit = 0
+    for i, uid in enumerate(test_user_model_input['user_id']):
+        pred = [item_profile['movie_id'].values[x[0]] for x in
+                heapq.nlargest(topN, score_dict[uid].items(), key=lambda x: x[1])]
+        filter_item = None
+        recall_score = recall_N(test_true_label[uid], pred, N=topN)
+        s.append(recall_score)
+        if test_true_label[uid] in pred:
+            hit += 1
+    
+    print("recall", np.mean(s))
+    print("hr", hit / len(test_user_model_input['user_id']))
